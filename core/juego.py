@@ -5,12 +5,15 @@ import pygame as py
 from .config import ALTO, ANCHO, FPS, SUELO, VELOCIDAD_INICIAL, VELOCIDAD_MAX
 from .dino import Dino
 from .obstaculo import Obstaculo
+from .sprite import Sprite
 
 
 class Juego:
     def __init__(self):
         py.init()
         self.pantalla = py.display.set_mode((ANCHO, ALTO))
+        self.sprites = Sprite()
+
         py.display.set_caption("Dino")
         self.reloj = py.time.Clock()
         self.fuente = py.font.SysFont("Menlo", 18)
@@ -20,7 +23,8 @@ class Juego:
 
     def reiniciar(self):
         # Dinos
-        self.dinos = [Dino()]
+        self.dinos = [Dino(self.sprites)]
+        self.suelo_x = 0
         self.puntaje = 0
 
         # Obstaculos
@@ -35,7 +39,7 @@ class Juego:
             not self.obstaculos
             or ANCHO - self.obstaculos[-1].x > self.proxima_distancia
         ):
-            self.obstaculos.append(Obstaculo(ANCHO + 20))
+            self.obstaculos.append(Obstaculo(ANCHO + 20, self.sprites))
             distancia_min = 250 + self.velocidad * 20
             self.proxima_distancia = distancia_min + random.randint(0, 300)
 
@@ -59,6 +63,7 @@ class Juego:
             if not self.game_over:
                 self.puntaje += 0.15
                 self.velocidad = min(self.velocidad + 0.002, VELOCIDAD_MAX)
+                self.suelo_x = (self.suelo_x - self.velocidad) % 1200
                 teclas = py.key.get_pressed()
                 for dino in self.dinos:
                     dino.agachado = teclas[py.K_DOWN] and dino.en_suelo()
@@ -78,9 +83,13 @@ class Juego:
                 else:
                     self.game_over = True
                     self.record = max(self.record, int(self.puntaje))
+                    for d in self.dinos:
+                        d.muerto = True
 
             self.pantalla.fill((247, 247, 247))
-            py.draw.line(self.pantalla, (83, 83, 83), (0, SUELO), (ANCHO, SUELO), 2)
+            # py.draw.line(self.pantalla, (83, 83, 83), (0, SUELO), (ANCHO, SUELO), 2)
+            self.pantalla.blit(self.sprites.suelo, (self.suelo_x - 1200, SUELO - 4))
+            self.pantalla.blit(self.sprites.suelo, (self.suelo_x, SUELO - 4))
 
             for obs in self.obstaculos:
                 obs.dibujar(self.pantalla)

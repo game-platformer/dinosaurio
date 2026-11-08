@@ -1,27 +1,32 @@
-import random
-
-import pygame
-
 from .config import FUERZA_SALTO, GRAVEDAD, SUELO
 
 
 class Dino:
-    def __init__(self):
+    def __init__(self, sprites):
+        self.sprite = sprites
         self.x = 60
         self.y = SUELO
         self.vel_y = 0
         self.agachado = False
-        self.color = (
-            random.randint(40, 200),
-            random.randint(40, 200),
-            random.randint(40, 200),
-        )
+        self.muerto = False
+        self.frame = 0
+
+    def imagen(self):
+        if self.muerto:
+            return self.sprite.dino_muerto
+
+        if not self.en_suelo():
+            return self.sprite.dino_saltar
+
+        paso = (self.frame // 6) % 2
+
+        if self.agachado:
+            return self.sprite.dino_agachado[paso]
+        return self.sprite.dino_correr[paso]
 
     @property
     def rect(self):
-        if self.agachado:
-            return pygame.Rect(self.x, self.y - 26, 55, 26)
-        return pygame.Rect(self.x, self.y - 44, 40, 44)
+        return self.imagen().get_rect(bottomleft=(self.x, self.y))
 
     def en_suelo(self):
         return self.y >= SUELO
@@ -37,5 +42,7 @@ class Dino:
         if self.en_suelo():
             self.vel_y = 0
 
+        self.frame += 1
+
     def dibujar(self, pantalla):
-        pygame.draw.rect(pantalla, self.color, self.rect)
+        pantalla.blit(self.imagen(), self.rect)
